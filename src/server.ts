@@ -6,7 +6,7 @@ import {
 } from "@trpc/server";
 import http from "http";
 import { createHTTPServer } from "@trpc/server/adapters/standalone";
-import { TAppRouter } from "./interface";
+import { TGreetRouter, TClockRouter, TAppRouter } from "./interface";
 import { z } from "zod";
 
 const t = initTRPC
@@ -36,10 +36,16 @@ const isAuthedMiddleware = t.middleware(async ({ meta, next, ctx }) => {
 
 const authProcedure = t.procedure.use(isAuthedMiddleware);
 
+export const clockRouter = t.router({
+  time: authProcedure.query(() => {
+    return new Date();
+  }),
+}) satisfies TClockRouter;
+
 const greetInput = z.string();
 const greetOutput = z.object({ greeting: z.string() });
 
-const appRouter = t.router({
+const greetRouter = t.router({
   greet: authProcedure
     .meta({ hasAuth: false })
     .input(greetInput)
@@ -52,11 +58,22 @@ const appRouter = t.router({
   protectedGreet: authProcedure
     .meta({ hasAuth: true })
     .input(greetInput)
-    .output(greetOutput)
     .query(({ input }) => {
       return {
+        __secret: true,
         greeting: `🕵🏾 shhh ${input}`,
       };
+    }),
+}) satisfies TGreetRouter;
+
+const appRouter = t.router({
+  greeter: greetRouter,
+  clock: clockRouter,
+  color: authProcedure
+    .input(z.object({ h: z.number(), s: z.number(), v: z.number() }))
+    .output(z.string())
+    .query(({ input }) => {
+      return `hsv(${input.h}, ${input.s}%, ${input.v}%)`;
     }),
 }) satisfies TAppRouter;
 

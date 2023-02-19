@@ -1,12 +1,20 @@
-import { client } from "./client";
-import { inspect } from "node:util";
+import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
+import { TAppRouter } from "./interface";
+
+export const client = createTRPCProxyClient<TAppRouter>({
+  links: [
+    httpBatchLink({
+      url: "http://localhost:2022",
+    }),
+  ],
+});
 
 async function main() {
-  const result = await client.greet.query("world");
-  console.log(inspect(result));
+  const greeting = await client.greeter.greet.query("d-money");
+  const date = await client.clock.time.query();
+  const hsv = await client.color.query({ h: 100, s: 100, v: 100 });
 
-  const protectedResult = await client.protectedGreet.query("protected world");
-  console.log(inspect(protectedResult));
+  console.log({ greeting, date, hsv });
 }
 
 main();
