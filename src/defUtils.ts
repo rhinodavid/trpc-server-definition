@@ -4,9 +4,16 @@ import {
   BuildProcedure,
   RootConfig,
   DefaultDataTransformer,
-  DefaultErrorShape,
+  TRPCError,
+  ProcedureType,
 } from "@trpc/server";
 import { RouterDef } from "@trpc/server/dist/core/router";
+import { DefaultErrorData } from "@trpc/server/dist/error/formatter";
+import {
+  TRPCErrorShape,
+  TRPC_ERROR_CODE_KEY,
+  TRPC_ERROR_CODE_NUMBER,
+} from "@trpc/server/rpc";
 
 /**
  * This file has utilities to define a router type without
@@ -40,17 +47,29 @@ export type defineQueryProcedure<TInput, TOutput> = BuildProcedure<
 export type defineRouter<
   Procedures extends Record<string, AnyProcedure>,
   Context extends object = {},
-  Meta extends object = {}
+  Meta extends object = {},
+  ErrorData extends DefaultErrorData = {
+    code: TRPC_ERROR_CODE_KEY;
+    httpStatus: number;
+    path: undefined;
+    stack: undefined;
+  }
 > = {
   _def: RouterDef<
     RootConfig<{
       ctx: Context;
       meta: Meta;
-      errorShape: DefaultErrorShape;
+      errorShape: TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, ErrorData>;
       transformer: DefaultDataTransformer;
     }>,
     Procedures
   >;
   createCaller: any;
-  getErrorShape: any;
+  getErrorShape: (opts: {
+    error: TRPCError;
+    type: ProcedureType | "unknown";
+    path: string | undefined;
+    input: unknown;
+    ctx: Context | undefined;
+  }) => TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, ErrorData>;
 };

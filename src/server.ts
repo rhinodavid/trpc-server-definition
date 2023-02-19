@@ -1,4 +1,9 @@
-import { inferRouterContext, inferRouterMeta, initTRPC, TRPCError } from "@trpc/server";
+import {
+  inferRouterContext,
+  inferRouterMeta,
+  initTRPC,
+  TRPCError,
+} from "@trpc/server";
 import http from "http";
 import { createHTTPServer } from "@trpc/server/adapters/standalone";
 import { TAppRouter } from "./interface";
@@ -7,7 +12,20 @@ import { z } from "zod";
 const t = initTRPC
   .context<inferRouterContext<TAppRouter>>()
   .meta<inferRouterMeta<TAppRouter>>()
-  .create();
+  .create({
+    errorFormatter({ shape, error }) {
+      const howMad: "mid" | "big" =
+        error.code === "UNAUTHORIZED" ? "big" : "mid";
+
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          howMad,
+        },
+      };
+    },
+  });
 
 const isAuthedMiddleware = t.middleware(async ({ meta, next, ctx }) => {
   if (meta?.hasAuth && !ctx.userName) {
