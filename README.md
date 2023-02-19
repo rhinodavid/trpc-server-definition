@@ -1,17 +1,63 @@
-# ts-node-starter
+# Independent trpc router definition
 
-A barebones starter kit for your next Node.js project with TypeScript, Jest, and Prettier
+## Problem
 
-## How to start?
+My company is planning to implement trpc as our service-to-service
+communication solution.
 
-All you gotta do is clone this repo and install the dev-dependencies with `yarn` or `npm`.
+We're trying to decide on how to organize trpc code in our
+Turborepo-powered monorepo.
 
-## Available scripts.
+Currently, it looks like the only way to organize the code is to put the
+server in one workspace and the client in another workspace, where the
+client depends on the server since the server defines `TAppRouter`.
 
-You can replace `yarn` with `npm` if you prefer that.
+```
++----------------+               +---------------+
+|                |   imports     |               |
+|  trpc server   |               |  trpc client  |
+|                |  <----------  |               |
+|      app       |               |      app      |
++----------------+               +---------------+
+```
 
-    yarn dev: for running your TypeScript code with nodemon.
-    yarn test: for running your tests.
-    yarn lint: for eslint warnings / errors.
-    yarn build: for building the final JavaScript files.
-    yarn prod for running the built JavaScript file.
+However, we don't want our "apps" to depend on each other.
+
+## Goal
+
+What we'd like to define the server interface in one workspace and have
+the server implementation and the client depend on that definition, similar
+to how protobufs work with gRPC:
+
+```
+             +--------------+
+             |              |
+             | trpc server  |
+             |  interface   |
+          +> |              | <---+
+          |  +--------------+     |
+          |                       |
+          |                       |
++---------+----+      +-----------+--+
+|              |      |              |
+| trpc server  |      | trpc client  |
+|implementation|      |     app      |
+|              |      |              |
++--------------+      +--------------+
+```
+
+## Solution/proposal
+
+I'd like to propose adding utilities to trpc to define a router
+independent of its implementation. This will solve our problem, but could
+have other benefits as well. For instance, one could publish the interface
+to an npm package while keeping the server implementation source closed.
+
+`src/defUtils.ts` contains a proof-of-concept of the definition utilities.
+
+`src/interface.ts` demonstrates how to use the definition utilities to define a router.
+
+Of note, this is a great use case for the
+[`satisfies`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator)
+operator, new in TypeScript 4.9, to not lose any specificity of the router type in the
+implementation.
