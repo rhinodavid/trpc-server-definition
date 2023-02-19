@@ -54,37 +54,3 @@ export type defineRouter<
   createCaller: any;
   getErrorShape: any;
 };
-
-/**
- * Infer the context type of a router.
- */
-export type inferContext<TRouter> = TRouter extends {
-  _def: RouterDef<
-    RootConfig<{
-      ctx: infer TContext extends object;
-      meta: any;
-      errorShape: any;
-      transformer: any;
-    }>,
-    any
-  >;
-}
-  ? TContext
-  : never;
-
-/**
- * Infer the meta type of a router.
- */
-export type inferMeta<TRouter> = TRouter extends {
-  _def: RouterDef<
-    RootConfig<{
-      ctx: any;
-      meta: infer TMeta extends object;
-      errorShape: any;
-      transformer: any;
-    }>,
-    any
-  >;
-}
-  ? TMeta
-  : never;

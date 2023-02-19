@@ -1,13 +1,12 @@
-import { initTRPC, TRPCError } from "@trpc/server";
+import { inferRouterContext, inferRouterMeta, initTRPC, TRPCError } from "@trpc/server";
 import http from "http";
 import { createHTTPServer } from "@trpc/server/adapters/standalone";
 import { TAppRouter } from "./interface";
 import { z } from "zod";
-import { inferContext, inferMeta } from "./defUtils";
 
 const t = initTRPC
-  .context<inferContext<TAppRouter>>()
-  .meta<inferMeta<TAppRouter>>()
+  .context<inferRouterContext<TAppRouter>>()
+  .meta<inferRouterMeta<TAppRouter>>()
   .create();
 
 const isAuthedMiddleware = t.middleware(async ({ meta, next, ctx }) => {
